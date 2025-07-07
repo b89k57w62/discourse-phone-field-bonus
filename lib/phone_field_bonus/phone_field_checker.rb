@@ -63,7 +63,7 @@ module PhoneFieldBonus
     def self.award_points(user)
       if defined?(DiscourseGamification)
         begin
-          score_event = ::DiscourseGamification::ScoreEvent.create!(
+          score_event = ::DiscourseGamification::GamificationScoreEvent.create!(
             user_id: user.id,
             event_name: "phone_field_completed",
             score: SiteSetting.phone_field_bonus_points,
@@ -126,10 +126,10 @@ module PhoneFieldBonus
         puts "DiscourseGamification: 已安裝 ✓"
         
         begin
-          score_count = ::DiscourseGamification::ScoreEvent.where(user_id: user.id).count
+          score_count = ::DiscourseGamification::GamificationScoreEvent.where(user_id: user.id).count
           puts "用戶總積分事件數: #{score_count}"
           
-          phone_events = ::DiscourseGamification::ScoreEvent.where(
+          phone_events = ::DiscourseGamification::GamificationScoreEvent.where(
             user_id: user.id, 
             event_name: "phone_field_completed"
           ).count
