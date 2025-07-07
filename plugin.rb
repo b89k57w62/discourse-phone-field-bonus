@@ -19,23 +19,8 @@ after_initialize do
   
   # No need to register events - we'll use direct score awarding
   
-  # Hook into user profile updates
+  # Hook into user profile updates only - avoid event loops
   DiscourseEvent.on(:user_updated) do |user|
-    PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
-  end
-  
-  # Also check when custom fields are updated
-  DiscourseEvent.on(:user_custom_fields_updated) do |user|
-    PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
-  end
-  
-  # Check when user fields are updated (this is key for user profile fields)
-  DiscourseEvent.on(:user_profile_updated) do |user|
-    PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
-  end
-  
-  # Additional hook for user field updates
-  DiscourseEvent.on(:user_field_updated) do |user|
     PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
   end
   
