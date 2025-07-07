@@ -13,20 +13,13 @@ enabled_site_setting :phone_field_bonus_enabled
 register_asset "stylesheets/phone-field-bonus.scss"
 
 after_initialize do
-  # Load plugin classes
   require_relative "lib/phone_field_bonus/engine"
   require_relative "lib/phone_field_bonus/phone_field_checker"
   
-  # No need to register events - we'll use direct score awarding
-  
-  # Hook into user profile updates only - avoid event loops
   DiscourseEvent.on(:user_updated) do |user|
     PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
   end
   
-  # Add a console method for manual checking (for debugging)
-  # Usage in Rails console: PhoneFieldBonus::PhoneFieldChecker.recheck_all_users
-  # Or for specific user: PhoneFieldBonus::PhoneFieldChecker.recheck_user(user_id)
   class << PhoneFieldBonus::PhoneFieldChecker
     def recheck_user(user_id)
       user = User.find(user_id)
