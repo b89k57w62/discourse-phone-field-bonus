@@ -1,0 +1,12 @@
+en:
+  site_settings:
+    phone_field_bonus_enabled: "Enable phone field completion bonus"
+    phone_field_bonus_points: "Points awarded for completing phone field"
+    phone_field_bonus_field_id: "Phone number user field ID"
+  
+  phone_field_bonus:
+    notification:
+      message: "Congratulations! You've successfully filled in your phone number and earned %{points} bonus points!"
+    admin:
+      title: "Phone Field Bonus Settings"
+      description: "Configure point rewards for users who complete their phone number field" 

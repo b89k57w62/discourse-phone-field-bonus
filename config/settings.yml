@@ -1,0 +1,18 @@
+plugins:
+  phone_field_bonus_enabled:
+    type: bool
+    default: true
+    description: "啟用手機號碼填寫獎勵功能"
+    
+  phone_field_bonus_points:
+    type: integer
+    default: 10
+    min: 1
+    max: 100
+    description: "用戶填寫手機號碼時獲得的積分數量"
+    
+  phone_field_bonus_field_id:
+    type: integer
+    default: 1
+    min: 1
+    description: "手機號碼用戶字段的 ID" 
