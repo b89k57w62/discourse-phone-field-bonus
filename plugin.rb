@@ -17,13 +17,7 @@ after_initialize do
   require_relative "lib/phone_field_bonus/engine"
   require_relative "lib/phone_field_bonus/phone_field_checker"
   
-  # Register custom events for gamification
-  if defined?(DiscourseGamification)
-    DiscourseGamification::GamificationScoreEvent.add_event(
-      :phone_field_completed,
-      event_name: 'phone_field_completed'
-    )
-  end
+  # No need to register events - we'll use direct score awarding
   
   # Hook into user profile updates
   DiscourseEvent.on(:user_updated) do |user|

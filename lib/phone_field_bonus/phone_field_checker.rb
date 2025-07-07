@@ -2,8 +2,6 @@
 
 module PhoneFieldBonus
   class PhoneFieldChecker
-    PHONE_FIELD_ID = 1 
-    POINTS_REWARD = 10
     
     def self.check_and_award_points(user)
       return unless SiteSetting.phone_field_bonus_enabled
@@ -17,17 +15,17 @@ module PhoneFieldBonus
         award_points(user)
         mark_as_awarded(user)
         
-        Rails.logger.info("Phone field bonus: Awarded #{POINTS_REWARD} points to user #{user.id} for completing phone field")
+        Rails.logger.info("Phone field bonus: Awarded #{SiteSetting.phone_field_bonus_points} points to user #{user.id} for completing phone field")
       end
     end
     
     private
     
     def self.get_phone_field_value(user)
-      user_field = user.user_fields&.dig(PHONE_FIELD_ID.to_s)
+      user_field = user.user_fields&.dig(SiteSetting.phone_field_bonus_field_id.to_s)
       return user_field if user_field.present?
       
-      user.custom_fields&.dig("user_field_#{PHONE_FIELD_ID}")
+      user.custom_fields&.dig("user_field_#{SiteSetting.phone_field_bonus_field_id}")
     end
     
     def self.phone_filled_and_valid?(phone_value)
@@ -49,15 +47,12 @@ module PhoneFieldBonus
     def self.award_points(user)
       if defined?(DiscourseGamification)
         begin
-          DiscourseGamification::GamificationScoreEvent.track_event(
-            :phone_field_completed,
+          ::DiscourseGamification::ScoreEvent.create!(
             user_id: user.id,
-            category_id: nil,
-            topic_id: nil,
-            post_id: nil
+            event_name: "phone_field_completed",
+            score: SiteSetting.phone_field_bonus_points,
+            created_at: Time.zone.now
           )
-          
-          DiscourseGamification.add_score_to_user(user.id, POINTS_REWARD, 'phone_field_completed')
         rescue => e
           Rails.logger.error("Phone field bonus: Error awarding points to user #{user.id}: #{e.message}")
         end
