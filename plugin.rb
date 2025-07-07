@@ -5,7 +5,7 @@
 # meta_topic_id: 0
 # version: 0.1.0
 # authors: Jeffrey
-# url: https://github.com/discourse/discourse-phone-field-bonus
+# url: https://github.com/b89k57w62/discourse-phone-field-bonus
 # required_version: 2.7.0
 
 enabled_site_setting :phone_field_bonus_enabled
