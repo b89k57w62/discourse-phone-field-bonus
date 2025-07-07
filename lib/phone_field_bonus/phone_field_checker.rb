@@ -65,8 +65,9 @@ module PhoneFieldBonus
         begin
           score_event = ::DiscourseGamification::GamificationScoreEvent.create!(
             user_id: user.id,
-            event_name: "phone_field_completed",
-            score: SiteSetting.phone_field_bonus_points,
+            description: "phone_field_completed",
+            points: SiteSetting.phone_field_bonus_points,
+            date: Date.current,
             created_at: Time.zone.now
           )
           Rails.logger.info("Phone field bonus: Successfully created score event #{score_event.id} for user #{user.id}")
@@ -131,7 +132,7 @@ module PhoneFieldBonus
           
           phone_events = ::DiscourseGamification::GamificationScoreEvent.where(
             user_id: user.id, 
-            event_name: "phone_field_completed"
+            description: "phone_field_completed"
           ).count
           puts "手機完成事件數: #{phone_events}"
         rescue => e
