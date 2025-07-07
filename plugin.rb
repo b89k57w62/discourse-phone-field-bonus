@@ -28,4 +28,32 @@ after_initialize do
   DiscourseEvent.on(:user_custom_fields_updated) do |user|
     PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
   end
+  
+  # Check when user fields are updated (this is key for user profile fields)
+  DiscourseEvent.on(:user_profile_updated) do |user|
+    PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
+  end
+  
+  # Additional hook for user field updates
+  DiscourseEvent.on(:user_field_updated) do |user|
+    PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
+  end
+  
+  # Add a console method for manual checking (for debugging)
+  # Usage in Rails console: PhoneFieldBonus::PhoneFieldChecker.recheck_all_users
+  # Or for specific user: PhoneFieldBonus::PhoneFieldChecker.recheck_user(user_id)
+  class << PhoneFieldBonus::PhoneFieldChecker
+    def recheck_user(user_id)
+      user = User.find(user_id)
+      check_and_award_points(user)
+    end
+    
+    def recheck_all_users
+      User.joins("LEFT JOIN user_custom_fields ucf ON users.id = ucf.user_id AND ucf.name = 'phone_field_bonus_awarded'")
+          .where("ucf.value IS NULL OR ucf.value != 'true'")
+          .find_each do |user|
+        check_and_award_points(user)
+      end
+    end
+  end
 end 

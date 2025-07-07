@@ -7,15 +7,23 @@ module PhoneFieldBonus
       return unless SiteSetting.phone_field_bonus_enabled
       return unless user&.id
       
-      return if already_awarded?(user)
+      Rails.logger.info("Phone field bonus: Checking user #{user.id} for phone field completion")
+      
+      if already_awarded?(user)
+        Rails.logger.info("Phone field bonus: User #{user.id} already awarded, skipping")
+        return
+      end
       
       phone_value = get_phone_field_value(user)
+      Rails.logger.info("Phone field bonus: User #{user.id} phone value: #{phone_value.present? ? '[PRESENT]' : '[EMPTY]'}")
       
       if phone_filled_and_valid?(phone_value)
         award_points(user)
         mark_as_awarded(user)
         
         Rails.logger.info("Phone field bonus: Awarded #{SiteSetting.phone_field_bonus_points} points to user #{user.id} for completing phone field")
+      else
+        Rails.logger.info("Phone field bonus: User #{user.id} phone field not valid or empty")
       end
     end
     

@@ -5,8 +5,6 @@ zh_TW:
     phone_field_bonus_field_id: "手機號碼用戶字段的 ID"
   
   phone_field_bonus:
-    notification:
-      message: "恭喜！您已成功填寫手機號碼，獲得 %{points} 積分獎勵！"
     admin:
       title: "手機號碼獎勵設置"
       description: "配置用戶填寫手機號碼時的積分獎勵" 

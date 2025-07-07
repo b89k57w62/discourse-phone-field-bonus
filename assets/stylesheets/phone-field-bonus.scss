@@ -1,17 +1,4 @@
 .phone-field-bonus {
-  &-notification {
-    background-color: var(--success-low);
-    border: 1px solid var(--success);
-    border-radius: 4px;
-    padding: 10px;
-    margin: 10px 0;
-    
-    .icon {
-      color: var(--success);
-      margin-right: 8px;
-    }
-  }
-  
   &-badge {
     background-color: var(--tertiary);
     color: var(--secondary);
