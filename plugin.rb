@@ -15,9 +15,38 @@ register_asset "stylesheets/phone-field-bonus.scss"
 after_initialize do
   require_relative "lib/phone_field_bonus/engine"
   require_relative "lib/phone_field_bonus/phone_field_checker"
+  require_relative "lib/phone_field_bonus/phone_field_bonus_job"
+  
   
   DiscourseEvent.on(:user_updated) do |user|
-    PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
+    next unless SiteSetting.phone_field_bonus_enabled
+    next unless user&.id
+    
+    debounce_key = "phone_field_bonus_debounce_#{user.id}"
+    if Discourse.redis.exists(debounce_key)
+      Rails.logger.debug "PhoneFieldBonus: Skipping check for user #{user.id} due to debouncing"
+      next
+    end
+    
+    Discourse.redis.setex(debounce_key, 30, "checked")
+    
+    Jobs.enqueue_in(2.seconds, :phone_field_bonus_check, user_id: user.id)
+  end
+  
+  class ::Jobs::PhoneFieldBonusCheck < ::Jobs::Base
+    def execute(args)
+      return unless SiteSetting.phone_field_bonus_enabled
+      return unless args[:user_id]
+      
+      user = User.find_by(id: args[:user_id])
+      return unless user
+      
+      PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
+    rescue ActiveRecord::RecordNotFound
+      Rails.logger.warn "PhoneFieldBonusCheck: User #{args[:user_id]} not found"
+    rescue => e
+      Rails.logger.error "PhoneFieldBonusCheck failed for user #{args[:user_id]}: #{e.message}"
+    end
   end
   
   class << PhoneFieldBonus::PhoneFieldChecker
@@ -27,11 +56,57 @@ after_initialize do
     end
     
     def recheck_all_users
-      User.joins("LEFT JOIN user_custom_fields ucf ON users.id = ucf.user_id AND ucf.name = 'phone_field_bonus_awarded'")
-          .where("ucf.value IS NULL OR ucf.value != 'true'")
-          .find_each do |user|
-        check_and_award_points(user)
+      Rails.logger.warn "PhoneFieldBonus: recheck_all_users is deprecated. Use recheck_all_users_safely instead."
+      recheck_all_users_safely
+    end
+    
+    def get_rate_limit_stats(user_id = nil)
+      if user_id
+        key = "#{RATE_LIMIT_KEY}_#{user_id}"
+        count = Discourse.redis.get(key).to_i
+        ttl = Discourse.redis.ttl(key)
+        { user_id: user_id, current_checks: count, reset_in_seconds: ttl }
+      else
+        keys = Discourse.redis.keys("#{RATE_LIMIT_KEY}_*")
+        keys.map do |key|
+          user_id = key.split('_').last
+          count = Discourse.redis.get(key).to_i
+          ttl = Discourse.redis.ttl(key)
+          { user_id: user_id, current_checks: count, reset_in_seconds: ttl }
+        end
       end
     end
+    
+    def clear_rate_limits(user_id = nil)
+      if user_id
+        key = "#{RATE_LIMIT_KEY}_#{user_id}"
+        Discourse.redis.del(key)
+        Rails.logger.info "PhoneFieldBonus: Cleared rate limit for user #{user_id}"
+      else
+        keys = Discourse.redis.keys("#{RATE_LIMIT_KEY}_*")
+        Discourse.redis.del(*keys) if keys.any?
+        Rails.logger.info "PhoneFieldBonus: Cleared all rate limits (#{keys.length} keys)"
+      end
+    end
+    
+    def health_check
+      stats = {
+        enabled: SiteSetting.phone_field_bonus_enabled,
+        field_id: SiteSetting.phone_field_bonus_field_id,
+        points: SiteSetting.phone_field_bonus_points,
+        active_rate_limits: Discourse.redis.keys("#{RATE_LIMIT_KEY}_*").length,
+        active_job_locks: Discourse.redis.keys("phone_bonus_job_*").length,
+        cache_entries: Discourse.redis.keys("phone_field_bonus_*").length - 
+                      Discourse.redis.keys("#{RATE_LIMIT_KEY}_*").length -
+                      Discourse.redis.keys("phone_bonus_job_*").length
+      }
+      
+      Rails.logger.info "PhoneFieldBonus Health Check: #{stats.inspect}"
+      stats
+    end
+  end
+  
+  if defined?(DiscoursePluginRegistry)
+    add_admin_route 'phone_field_bonus.title', 'phone-field-bonus'
   end
 end 
