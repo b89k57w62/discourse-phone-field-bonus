@@ -28,7 +28,7 @@ after_initialize do
     next unless user&.id
     
     debounce_key = "phone_field_bonus_debounce_#{user.id}"
-    if Discourse.redis.exists(debounce_key)
+    if Discourse.redis.exists(debounce_key) > 0
       Rails.logger.debug "PhoneFieldBonus: Skipping check for user #{user.id} due to debouncing"
       next
     end
@@ -36,22 +36,6 @@ after_initialize do
     Discourse.redis.setex(debounce_key, 30, "checked")
     
     Jobs.enqueue_in(2.seconds, :phone_field_bonus_job, user_id: user.id)
-  end
-  
-  class ::Jobs::PhoneFieldBonusCheck < ::Jobs::Base
-    def execute(args)
-      return unless SiteSetting.phone_field_bonus_enabled
-      return unless args[:user_id]
-      
-      user = User.find_by(id: args[:user_id])
-      return unless user
-      
-      PhoneFieldBonus::PhoneFieldChecker.check_and_award_points(user)
-    rescue ActiveRecord::RecordNotFound
-      Rails.logger.warn "PhoneFieldBonusCheck: User #{args[:user_id]} not found"
-    rescue => e
-      Rails.logger.error "PhoneFieldBonusCheck failed for user #{args[:user_id]}: #{e.message}"
-    end
   end
   
   class << PhoneFieldBonus::PhoneFieldChecker
