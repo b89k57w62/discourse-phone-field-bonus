@@ -127,10 +127,10 @@ module PhoneFieldBonus
     
     def self.award_points_safely(user)
       begin
-        if respond_to_discourse_core_scoring?(user)
-          award_points_via_core(user)
-        elsif defined?(DiscourseGamification)
+        if defined?(DiscourseGamification)
           award_points_via_plugin(user)
+        elsif respond_to_discourse_core_scoring?(user)
+          award_points_via_core(user)
         else
           award_points_via_direct_update(user)
         end
@@ -147,7 +147,7 @@ module PhoneFieldBonus
     end
     
     def self.respond_to_discourse_core_scoring?(user)
-      defined?(UserStat) && user.user_stat.present?
+      defined?(UserStat) && user.user_stat.present? && user.user_stat.respond_to?(:custom_score)
     end
     
     def self.award_points_via_core(user)
