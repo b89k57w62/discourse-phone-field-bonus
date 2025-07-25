@@ -17,6 +17,11 @@ after_initialize do
   require_relative "lib/phone_field_bonus/phone_field_checker"
   require_relative "lib/phone_field_bonus/phone_field_bonus_job"
   
+  module ::Jobs
+    class PhoneFieldBonusJob < PhoneFieldBonus::PhoneFieldBonusJob
+    end
+  end
+  
   
   DiscourseEvent.on(:user_updated) do |user|
     next unless SiteSetting.phone_field_bonus_enabled

@@ -24,7 +24,7 @@ module PhoneFieldBonus
         
         Discourse.redis.setex(job_key, 300, "processing")
         
-        PhoneFieldBonus::PhoneFieldBonusJob.perform_later(user.id)
+        Jobs.enqueue(:phone_field_bonus_job, user_id: user.id)
       end
     end
     

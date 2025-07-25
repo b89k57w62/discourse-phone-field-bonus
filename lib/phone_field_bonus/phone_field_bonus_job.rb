@@ -1,40 +1,11 @@
 # frozen_string_literal: true
 
 module PhoneFieldBonus
-  class PhoneFieldBonusJob < ApplicationJob
-    queue_as :low
+  class PhoneFieldBonusJob < ::Jobs::Base
+    sidekiq_options retry: 5, queue: 'low'
     
-    retry_on StandardError, wait: :exponentially_longer, attempts: 5
-    retry_on ActiveJob::DeserializationError, attempts: 3
-    discard_on ActiveRecord::RecordNotFound do |job, error|
-      Rails.logger.warn "PhoneFieldBonusJob: User #{job.arguments.first} not found, discarding job"
-    end
-    
-    around_perform do |job, block|
-      start_time = Time.current
-      job_id = job.job_id
-      user_id = job.arguments.first
-      
-      Rails.logger.info "PhoneFieldBonusJob[#{job_id}]: Starting for user #{user_id}"
-      
-      begin
-        block.call
-        duration = Time.current - start_time
-        Rails.logger.info "PhoneFieldBonusJob[#{job_id}]: Completed successfully in #{duration.round(3)}s"
-        
-        increment_job_stats("success")
-        
-      rescue => error
-        duration = Time.current - start_time
-        Rails.logger.error "PhoneFieldBonusJob[#{job_id}]: Failed after #{duration.round(3)}s - #{error.message}"
-        
-        increment_job_stats("failure")
-        
-        raise error
-      end
-    end
-    
-    def perform(user_id)
+    def execute(args)
+      user_id = args[:user_id]
       return unless SiteSetting.phone_field_bonus_enabled
       
       raise ArgumentError, "user_id cannot be nil" if user_id.nil?
