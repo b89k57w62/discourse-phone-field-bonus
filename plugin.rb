@@ -66,13 +66,14 @@ after_initialize do
     end
     
     def get_rate_limit_stats(user_id = nil)
+      rate_limit_key = PhoneFieldBonus::PhoneFieldChecker::RATE_LIMIT_KEY
       if user_id
-        key = "#{RATE_LIMIT_KEY}_#{user_id}"
+        key = "#{rate_limit_key}_#{user_id}"
         count = Discourse.redis.get(key).to_i
         ttl = Discourse.redis.ttl(key)
         { user_id: user_id, current_checks: count, reset_in_seconds: ttl }
       else
-        keys = Discourse.redis.keys("#{RATE_LIMIT_KEY}_*")
+        keys = Discourse.redis.keys("#{rate_limit_key}_*")
         keys.map do |key|
           user_id = key.split('_').last
           count = Discourse.redis.get(key).to_i
@@ -83,26 +84,28 @@ after_initialize do
     end
     
     def clear_rate_limits(user_id = nil)
+      rate_limit_key = PhoneFieldBonus::PhoneFieldChecker::RATE_LIMIT_KEY
       if user_id
-        key = "#{RATE_LIMIT_KEY}_#{user_id}"
+        key = "#{rate_limit_key}_#{user_id}"
         Discourse.redis.del(key)
         Rails.logger.info "PhoneFieldBonus: Cleared rate limit for user #{user_id}"
       else
-        keys = Discourse.redis.keys("#{RATE_LIMIT_KEY}_*")
+        keys = Discourse.redis.keys("#{rate_limit_key}_*")
         Discourse.redis.del(*keys) if keys.any?
         Rails.logger.info "PhoneFieldBonus: Cleared all rate limits (#{keys.length} keys)"
       end
     end
     
     def health_check
+      rate_limit_key = PhoneFieldBonus::PhoneFieldChecker::RATE_LIMIT_KEY
       stats = {
         enabled: SiteSetting.phone_field_bonus_enabled,
         field_id: SiteSetting.phone_field_bonus_field_id,
         points: SiteSetting.phone_field_bonus_points,
-        active_rate_limits: Discourse.redis.keys("#{RATE_LIMIT_KEY}_*").length,
+        active_rate_limits: Discourse.redis.keys("#{rate_limit_key}_*").length,
         active_job_locks: Discourse.redis.keys("phone_bonus_job_*").length,
         cache_entries: Discourse.redis.keys("phone_field_bonus_*").length - 
-                      Discourse.redis.keys("#{RATE_LIMIT_KEY}_*").length -
+                      Discourse.redis.keys("#{rate_limit_key}_*").length -
                       Discourse.redis.keys("phone_bonus_job_*").length
       }
       
