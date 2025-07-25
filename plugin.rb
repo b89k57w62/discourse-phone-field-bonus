@@ -35,7 +35,7 @@ after_initialize do
     
     Discourse.redis.setex(debounce_key, 30, "checked")
     
-    Jobs.enqueue_in(2.seconds, :phone_field_bonus_check, user_id: user.id)
+    Jobs.enqueue_in(2.seconds, :phone_field_bonus_job, user_id: user.id)
   end
   
   class ::Jobs::PhoneFieldBonusCheck < ::Jobs::Base

@@ -20,7 +20,7 @@ module PhoneFieldBonus
       
       if phone_filled_and_valid?(phone_value)
         job_key = "phone_bonus_job_#{user.id}"
-        return if Discourse.redis.exists(job_key)
+        return if Discourse.redis.exists(job_key) > 0
         
         Discourse.redis.setex(job_key, 300, "processing")
         
